@@ -6,6 +6,7 @@ import asyncio
 import struct
 import json
 from collections import namedtuple
+import requests
 
 
 class Crawler:
@@ -15,13 +16,19 @@ class Crawler:
     HEADER_STRUCT = struct.Struct('>I2H2I')
     HeaderTuple = namedtuple('HeaderTuple', ('total_len', 'header_len', 'proto_ver', 'operation', 'sequence'))
 
-    def __init__(self, roomid):
-        self.roomid = roomid
-        self.generate_params()
+    def __init__(self, uid):
+        self._id = uid
+        self.generate_crawl_params()
 
-    def generate_params(self):
+    def get_room_info(self):
+        response = requests.get(url=r'https://api.live.bilibili.com/room/v1/Room/room_init', params={'id': self._id, })
+        self.roomid = response.json()['data']['room_id']
+        print(self.roomid)
+
+    def generate_crawl_params(self):
+        self.get_room_info()
         self.generate_auth_code()
-        self.generate_heartbeat()
+        self.generate_heartbeat_code()
         self._websocket = None
 
     def _pack_params(self, data, code):
@@ -34,7 +41,7 @@ class Crawler:
         auth_code = CommunicationCode.AUTH_CODE
         self.AUTH_CODE = self._pack_params(auth_params, auth_code)
 
-    def generate_heartbeat(self):
+    def generate_heartbeat_code(self):
         heartbeat_params = {}
         heartbeat_code = 2
         self.HEART_BEAT = self._pack_params(heartbeat_params, heartbeat_code)
@@ -76,6 +83,7 @@ class Crawler:
     async def _handle_popularity(self, msg, header):
         popularity = int.from_bytes(msg[header.header_len: header.total_len], 'big')
         # print("当前直播间热度：{}".format(popularity))
+        pass
 
     async def analysis_comment(self, comment):
         comment_time = comment[0][4]
@@ -95,11 +103,12 @@ class Crawler:
         if msg_type == 'DANMU_MSG':
             # 弹幕评论消息
             comment = msg['info']
-            await self.analysis_comment(comment)
+            # await self.analysis_comment(comment)
         elif msg_type == 'SEND_GIFT':
             # 礼物消息
             gift = msg['data']
-            await self.analysis_gift(gift)
+            print(gift)
+            # await self.analysis_gift(gift)
         # elif msg_type == 'ROOM_RANK':
         #     # 房间排名信息
         #     pass
@@ -139,7 +148,8 @@ class Crawler:
             await self._handle_popularity(msg, header)
         elif header.operation == CommunicationCode.COMMAND:
             # 消息从服务器发送过来，需要具体分类处理
-            await self._handle_cmd(msg, header)
+            print(msg)
+            # await self._handle_cmd(msg, header)
         else:
             # 未见过代码
             pass
@@ -155,7 +165,7 @@ class CommunicationCode:
 
 
 def main():
-    roomid = 5441
+    roomid = 646
     c = Crawler(roomid)
     tasks = [asyncio.ensure_future(c.crawl()), asyncio.ensure_future(c.heart_beat_loop())]
     loop = asyncio.get_event_loop()
@@ -174,19 +184,4 @@ def main():
 
 
 if __name__ == '__main__':
-    roomid = 6876276
-    c = Crawler(roomid)
-    tasks = [asyncio.ensure_future(c.crawl()), asyncio.ensure_future(c.heart_beat_loop())]
-    loop = asyncio.get_event_loop()
-    try:
-        loop.run_until_complete(asyncio.wait(tasks))
-    except KeyboardInterrupt as e:
-        print(asyncio.Task.all_tasks())
-        for task in asyncio.Task.all_tasks():
-            print(task.cancel())
-        loop.stop()
-        loop.run_forever()
-    except Exception as e:
-        print(e)
-    finally:
-        loop.close()
+    main()
