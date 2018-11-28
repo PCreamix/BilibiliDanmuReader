@@ -4,7 +4,7 @@
 import aiohttp
 import asyncio
 import struct
-import json
+import ujson as json
 from collections import namedtuple
 import requests
 
@@ -103,12 +103,11 @@ class Crawler:
         if msg_type == 'DANMU_MSG':
             # 弹幕评论消息
             comment = msg['info']
-            # await self.analysis_comment(comment)
+            await self.analysis_comment(comment)
         elif msg_type == 'SEND_GIFT':
             # 礼物消息
             gift = msg['data']
-            print(gift)
-            # await self.analysis_gift(gift)
+            await self.analysis_gift(gift)
         # elif msg_type == 'ROOM_RANK':
         #     # 房间排名信息
         #     pass
@@ -148,8 +147,7 @@ class Crawler:
             await self._handle_popularity(msg, header)
         elif header.operation == CommunicationCode.COMMAND:
             # 消息从服务器发送过来，需要具体分类处理
-            print(msg)
-            # await self._handle_cmd(msg, header)
+            await self._handle_cmd(msg, header)
         else:
             # 未见过代码
             pass
