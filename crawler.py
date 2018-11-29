@@ -10,9 +10,9 @@ import requests
 
 
 class Crawler:
-    user_agent = r"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763"
-    headers = {'User-Agent': user_agent, }
-    url = r'ws://broadcastlv.chat.bilibili.com:2244/sub'
+    user_agent = r"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Safari/537.36"
+    headers = {'User-Agent': user_agent, 'Connection': 'Upgrade', }
+    url = r'wss://broadcastlv.chat.bilibili.com:443/sub'
     HEADER_STRUCT = struct.Struct('>I2H2I')
     HeaderTuple = namedtuple('HeaderTuple', ('total_len', 'header_len', 'proto_ver', 'operation', 'sequence'))
 
@@ -97,16 +97,15 @@ class Crawler:
         gift_uname = gift['uname']
         print(gift_name, gift_num, gift_uname)
 
-    async def _handle_cmd(self, msg, header):
-        msg = json.loads(msg[header.header_len: header.total_len])
-        msg_type = msg['cmd']
+    async def phase_message(self, message):
+        msg_type = message['cmd']
         if msg_type == 'DANMU_MSG':
             # 弹幕评论消息
-            comment = msg['info']
+            comment = message['info']
             await self.analysis_comment(comment)
         elif msg_type == 'SEND_GIFT':
             # 礼物消息
-            gift = msg['data']
+            gift = message['data']
             await self.analysis_gift(gift)
         # elif msg_type == 'ROOM_RANK':
         #     # 房间排名信息
@@ -136,6 +135,21 @@ class Crawler:
             # 仅处理上面的弹幕和礼物消息，其它的忽略
             pass
 
+    async def _handle_cmd(self, msg):
+        # 单条消息格式都一致，为header + message形式，server连续发送
+        # client单次接收可能为多条消息连续叠加，每次取一条消息处理
+        while True:
+            try:
+                # 取header部分，如果为空字符串，则不能解读
+                header = self.HeaderTuple(*self.HEADER_STRUCT.unpack_from(msg, 0))
+            except struct.error:
+                break
+            # 取出单独一条消息处理
+            message = json.loads(msg[header.header_len: header.total_len])
+            await self.phase_message(message)
+            # 更新读取剩下消息
+            msg = msg[header.total_len:]
+
     async def _handle_message(self, msg):
         header = self.HeaderTuple(*self.HEADER_STRUCT.unpack_from(msg, 0))
         if header.operation == CommunicationCode.RECV_HEARTBEAT:
@@ -147,7 +161,7 @@ class Crawler:
             await self._handle_popularity(msg, header)
         elif header.operation == CommunicationCode.COMMAND:
             # 消息从服务器发送过来，需要具体分类处理
-            await self._handle_cmd(msg, header)
+            await self._handle_cmd(msg)
         else:
             # 未见过代码
             pass
@@ -163,7 +177,7 @@ class CommunicationCode:
 
 
 def main():
-    roomid = 646
+    roomid = 1111
     c = Crawler(roomid)
     tasks = [asyncio.ensure_future(c.crawl()), asyncio.ensure_future(c.heart_beat_loop())]
     loop = asyncio.get_event_loop()
@@ -183,3 +197,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# todo: 函数名称优化
+# todo: asyncio loop 中断操作确认
