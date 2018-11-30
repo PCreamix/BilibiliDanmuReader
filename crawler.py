@@ -188,6 +188,7 @@ def main():
     try:
         loop.run_until_complete(asyncio.wait(tasks))
     except KeyboardInterrupt as e:
+        print(e)
         print(asyncio.Task.all_tasks())
         for task in asyncio.Task.all_tasks():
             print(task.cancel())

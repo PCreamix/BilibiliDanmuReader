@@ -35,12 +35,12 @@ if __name__ == '__main__':
     tasks = client.run()
     try:
         loop.run_until_complete(asyncio.wait(tasks))
-    except Exception as e:
-        print(e)
-    # except KeyboardInterrupt as e:
-    #     print(asyncio.Task.all_tasks())
-    #     print(asyncio.gather(*asyncio.Task.all_tasks()).cancel())
-    #     loop.stop()
-    #     loop.run_forever()
+    except KeyboardInterrupt as e:
+        loop_tasks = asyncio.Task.all_tasks()
+        print(loop_tasks)
+        for task in loop_tasks:
+            print(task.cancel())
+        loop.stop()
+        loop.run_forever()
     finally:
         loop.close()
