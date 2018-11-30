@@ -13,6 +13,7 @@ class Speaker:
     async def say(self, text):
         # 文字转化为语言播放
         if text:
+            print(text)
             self.speaker.Speak(text)
 
 
