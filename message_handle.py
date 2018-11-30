@@ -13,6 +13,8 @@ class MessageHandler:
             msg_type = message[0]
             if msg_type == 'DANMU_MSG':
                 # 弹幕消息
+                if message[1] == r'饼干喵7':
+                    message[1] = r'主播'
                 text = r"{} 说 {} o".format(*(message[1:]))
             elif msg_type == 'SEND_GIFT':
                 # 礼物消息

@@ -89,7 +89,7 @@ class Crawler:
     async def analysis_comment(self, comment):
         comment_msg = comment[1]
         comment_uname = comment[2][1]
-        msg = ('DANMU_MSG', comment_uname, comment_msg)
+        msg = ['DANMU_MSG', comment_uname, comment_msg]
         await self._queue.put(msg)  # 保存到队列
 
     async def analysis_gift(self, gift):
