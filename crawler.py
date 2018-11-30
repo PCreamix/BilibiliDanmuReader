@@ -16,8 +16,9 @@ class Crawler:
     HEADER_STRUCT = struct.Struct('>I2H2I')
     HeaderTuple = namedtuple('HeaderTuple', ('total_len', 'header_len', 'proto_ver', 'operation', 'sequence'))
 
-    def __init__(self, uid):
+    def __init__(self, uid, queue):
         self._id = uid
+        self._queue = queue
         self.generate_crawl_params()
 
     def get_room_info(self):
@@ -54,7 +55,7 @@ class Crawler:
                         self._websocket = ws  # 保存链接，供全局使用
                         await self._send_auth_code()
                         async for res in ws:
-                            await self._handle_message(res.data)
+                            await self._handle_stream(res.data)
             except Exception as e:
                 print(e)
                 # 发生错误，休息一段时间，重新连接
@@ -81,23 +82,24 @@ class Crawler:
         await self._websocket.send_bytes(self.AUTH_CODE)
 
     async def _handle_popularity(self, msg, header):
-        popularity = int.from_bytes(msg[header.header_len: header.total_len], 'big')
+        # popularity = int.from_bytes(msg[header.header_len: header.total_len], 'big')
         # print("当前直播间热度：{}".format(popularity))
         pass
 
     async def analysis_comment(self, comment):
-        comment_time = comment[0][4]
         comment_msg = comment[1]
         comment_uname = comment[2][1]
-        print(comment_time, comment_msg, comment_uname)
+        msg = ('DANMU_MSG', comment_uname, comment_msg)
+        await self._queue.put(msg)  # 保存到队列
 
     async def analysis_gift(self, gift):
-        gift_name = gift['giftName']
-        gift_num = gift['num']
+        gift_type = gift['giftName']
+        num_gift = gift['num']
         gift_uname = gift['uname']
-        print(gift_name, gift_num, gift_uname)
+        msg = ('SEND_GIFT', gift_uname, num_gift, gift_type)
+        await self._queue.put(msg)  # 保存到队列
 
-    async def phase_message(self, message):
+    async def analysis_message(self, message):
         msg_type = message['cmd']
         if msg_type == 'DANMU_MSG':
             # 弹幕评论消息
@@ -135,35 +137,36 @@ class Crawler:
             # 仅处理上面的弹幕和礼物消息，其它的忽略
             pass
 
-    async def _handle_cmd(self, msg):
+    async def _handle_command(self, stream):
         # 单条消息格式都一致，为header + message形式，server连续发送
-        # client单次接收可能为多条消息连续叠加，每次取一条消息处理
+        # client单次接收到的stream可能为多条消息连续叠加，每次取一条消息处理
         while True:
             try:
                 # 取header部分，如果为空字符串，则不能解读
-                header = self.HeaderTuple(*self.HEADER_STRUCT.unpack_from(msg, 0))
+                header = self.HeaderTuple(*self.HEADER_STRUCT.unpack_from(stream, 0))
             except struct.error:
                 break
-            # 取出单独一条消息处理
-            message = json.loads(msg[header.header_len: header.total_len])
-            await self.phase_message(message)
+            # 取出单独一条消息处理内容
+            message = json.loads(stream[header.header_len: header.total_len])
+            await self.analysis_message(message)
             # 更新读取剩下消息
-            msg = msg[header.total_len:]
+            stream = stream[header.total_len:]
 
-    async def _handle_message(self, msg):
-        header = self.HeaderTuple(*self.HEADER_STRUCT.unpack_from(msg, 0))
+    async def _handle_stream(self, stream):
+        header = self.HeaderTuple(*self.HEADER_STRUCT.unpack_from(stream, 0))
         if header.operation == CommunicationCode.RECV_HEARTBEAT:
             # 收到服务器发送的HEATER_BEAT
             # 客服端需要返回HEATER_BEAT
             await self._send_heart_beat()
         elif header.operation == CommunicationCode.POPULARITY:
             # 服务器返回当前房间的热度信息
-            await self._handle_popularity(msg, header)
+            await self._handle_popularity(stream, header)
         elif header.operation == CommunicationCode.COMMAND:
             # 消息从服务器发送过来，需要具体分类处理
-            await self._handle_cmd(msg)
+            await self._handle_command(stream)
         else:
             # 未见过代码
+            print(header.operation)
             pass
 
 
@@ -177,8 +180,9 @@ class CommunicationCode:
 
 
 def main():
-    roomid = 1111
-    c = Crawler(roomid)
+    roomid = 388
+    queue = asyncio.Queue()
+    c = Crawler(roomid, queue)
     tasks = [asyncio.ensure_future(c.crawl()), asyncio.ensure_future(c.heart_beat_loop())]
     loop = asyncio.get_event_loop()
     try:
@@ -197,6 +201,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# todo: 函数名称优化
-# todo: asyncio loop 中断操作确认
