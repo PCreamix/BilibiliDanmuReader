@@ -11,10 +11,10 @@ class MessageHandler:
         while True:
             message = await self._queue.get()
             msg_type = message[0]
-            if msg_type == 'comment':
+            if msg_type == 'DANMU_MSG':
                 # 弹幕消息
                 text = r"{} 说 {} o".format(*(message[1:]))
-            elif msg_type == 'gift':
+            elif msg_type == 'SEND_GIFT':
                 # 礼物消息
                 text = r"谢谢{}送的{}个{} o".format(*(message[1:]))
             else:
