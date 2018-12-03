@@ -5,6 +5,7 @@ import asyncio
 from crawler import Crawler
 from message_handle import MessageHandler
 from text2voice import Speaker
+from chat_bot import ChatBot
 
 
 class Bilibili_Client:
@@ -24,9 +25,12 @@ class Bilibili_Client:
 if __name__ == '__main__':
     spk = Speaker()
     queue = asyncio.Queue()
+    apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
+    bot_name = r'饼干侠'
+    chatbot = ChatBot(apikey, bot_name)
     uid = 6876276
 
-    reader = MessageHandler(spk, queue)
+    reader = MessageHandler(spk, queue, chatbot)
     crawler = Crawler(uid, queue)
 
     client = Bilibili_Client(crawler, reader)

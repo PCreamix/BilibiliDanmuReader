@@ -3,9 +3,10 @@
 
 
 class MessageHandler:
-    def __init__(self, speaker, queue):
+    def __init__(self, speaker, queue, chatbot):
         self._speaker = speaker
         self._queue = queue
+        self._chatbot = chatbot
 
     async def read_loop(self):
         while True:
@@ -13,19 +14,30 @@ class MessageHandler:
             msg_type = message[0]
             if msg_type == 'DANMU_MSG':
                 # 弹幕消息
-                if message[1] == r'饼干喵7':
-                    message[1] = r'主播'
-                text = r"{} 说 {} o".format(*(message[1:]))
+                uname, msg, userid = message[1:]
+                if uname == r'饼干喵7':
+                    uname = r'主播'
+                if msg.startswith(r'@'+self._chatbot.name):
+                    real_msg = msg.strip(r'@'+self._chatbot.name)
+                    reply = await self._chatbot.chat(userid, real_msg)
+                    question = r'{} 对 {} 说 {} o'.format(uname, self._chatbot.name, real_msg)
+                    await self._speaker.say(question)
+                    answer = r'{} 回答 {} 说 {} o'.format(self._chatbot.name, uname, reply)
+                    await self._speaker.say(answer)
+                else:
+                    text = r"{} 说 {} o".format(uname, msg)
+                    await self._speaker.say(text)
             elif msg_type == 'SEND_GIFT':
                 # 礼物消息
-                text = r"谢谢{}送的{}个{} o".format(*(message[1:]))
+                uname, num_gift, gift_type = message[1:]
+                text = r"谢谢{}送的{}个{} o".format(uname, num_gift, gift_type)
+                await self._speaker.say(text)
             else:
                 pass
-            await self._speaker.say(text)
 
 
 def main():
-    print('ok')
+    print('no test')
 
 
 if __name__ == '__main__':

@@ -9,8 +9,9 @@ import ujson as json
 class ChatBot:
     url = r'http://openapi.tuling123.com/openapi/api/v2'
 
-    def __init__(self, apikey):
+    def __init__(self, apikey, name):
         self.apikey = apikey
+        self.name = name
 
     async def chat(self, user_id, msg):
         params = {r"reqType": 0, r"perception": {r"inputText": {r"text": msg}, },
@@ -20,7 +21,7 @@ class ChatBot:
                 response = await response.text()
                 response = json.loads(response)
                 if response['intent']['code'] not in (4500, 4003):
-                    re_msg = response['results'][0]['values']['text'])
+                    re_msg = response['results'][0]['values']['text']
                     return re_msg
                 else:
                     # 需要改变
