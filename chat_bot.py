@@ -20,8 +20,8 @@ class ChatBot:
                 response = await response.text()
                 response = json.loads(response)
                 if response['intent']['code'] not in (4500, 4003):
-                    print(response['results'][0]['values']['text'])
-                    return response
+                    re_msg = response['results'][0]['values']['text'])
+                    return re_msg
                 else:
                     # 需要改变
                     raise Exception(r'聊天机器人请求有问题!!!!')
