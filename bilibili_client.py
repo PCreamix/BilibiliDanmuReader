@@ -14,11 +14,14 @@ class Bilibili_Client:
         self._message_handle = message_handle
 
     async def run(self):
+        # 建立协程
         crawl_loop = self._crawler.crawl()
         heart_beat_loop = self._crawler.heart_beat_loop()
         reader_loop = self._message_handle.read_loop()
+        # 建立任务
         tasks = [asyncio.ensure_future(crawl_loop), asyncio.ensure_future(heart_beat_loop),
                  asyncio.ensure_future(reader_loop)]
+        # 运行任务
         await asyncio.wait(tasks)
 
 
