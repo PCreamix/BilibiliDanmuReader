@@ -13,18 +13,19 @@ class Bilibili_Client:
         self._crawler = crawler
         self._message_handle = message_handle
 
-    def run(self):
+    async def run(self):
         crawl_loop = self._crawler.crawl()
         heart_beat_loop = self._crawler.heart_beat_loop()
         reader_loop = self._message_handle.read_loop()
         tasks = [asyncio.ensure_future(crawl_loop), asyncio.ensure_future(heart_beat_loop),
                  asyncio.ensure_future(reader_loop)]
-        return tasks
+        await asyncio.wait(tasks)
 
 
 if __name__ == '__main__':
     spk = Speaker()
     queue = asyncio.Queue()
+
     apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
     bot_name = r'饼干侠'
     chatbot = ChatBot(apikey, bot_name)
@@ -36,14 +37,13 @@ if __name__ == '__main__':
     client = Bilibili_Client(crawler, reader)
 
     loop = asyncio.get_event_loop()
-    tasks = client.run()
+    coroutine = client.run()
+    task = asyncio.ensure_future(coroutine)
     try:
-        loop.run_until_complete(asyncio.wait(tasks))
+        loop.run_until_complete(task)
     except KeyboardInterrupt as e:
-        loop_tasks = asyncio.Task.all_tasks()
-        print(loop_tasks)
-        for task in loop_tasks:
-            print(task.cancel())
+        print(asyncio.Task.all_tasks())
+        print(asyncio.gather(*asyncio.Task.all_tasks()).cancel())
         loop.stop()
         loop.run_forever()
     finally:
