@@ -17,13 +17,9 @@ class MessageHandler:
                 uname, msg, userid = message[1:]
                 if uname == r'饼干喵7':
                     uname = r'主播'
-                if msg.startswith(r'@'+self._chatbot.name):
-                    real_msg = msg.strip(r'@'+self._chatbot.name)
-                    reply = await self._chatbot.chat(userid, real_msg)
-                    question = r'{} 对 {} 说 {} o'.format(uname, self._chatbot.name, real_msg)
-                    await self._speaker.say(question)
-                    answer = r'{} 回答 {} 说 {} o'.format(self._chatbot.name, uname, reply)
-                    await self._speaker.say(answer)
+                if msg.startswith(r'@' + self._chatbot.name):
+                    # 与聊天机器人对话
+                    await self._chat_with_bot(uname, msg, userid)
                 else:
                     text = r"{} 说 {} o".format(uname, msg)
                     await self._speaker.say(text)
@@ -34,6 +30,15 @@ class MessageHandler:
                 await self._speaker.say(text)
             else:
                 pass
+
+    async def _chat_with_bot(self, uname, msg, userid):
+        # 和聊天机器人对话
+        real_msg = msg.strip(r'@' + self._chatbot.name)  # 取出消息具体内容
+        reply = await self._chatbot.chat(userid, real_msg)  # 得到机器人的回复
+        question = r'{} 对 {} 说 {} o'.format(uname, self._chatbot.name, real_msg)
+        await self._speaker.say(question)
+        answer = r'{} 回答 {} 说 {} o'.format(self._chatbot.name, uname, reply)
+        await self._speaker.say(answer)
 
 
 def main():
