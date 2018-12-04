@@ -12,16 +12,15 @@ class ChatBot:
     def __init__(self, apikey):
         self.apikey = apikey
 
-    async def chat(self, user_id, msg):
+    async def chat(self, userid, msg):
         params = {r"reqType": 0, r"perception": {r"inputText": {r"text": msg}, },
-                  r"userInfo": {r"apiKey": self.apikey, r"userId": user_id}, }
-        async with aiohttp.ClientSession() as session:
+                  r"userInfo": {r"apiKey": self.apikey, r"userId": userid}, }
+        async with aiohttp.ClientSession(json_serialize=json.dumps) as session:
             async with session.post(url=self.url, json=params) as response:
-                response = await response.text()
-                response = json.loads(response)
+                response = await response.json(content_type=None)
                 if response['intent']['code'] not in (4500, 4003):
-                    re_msg = response['results'][0]['values']['text'])
-                    return re_msg
+                    reply = response['results'][0]['values']['text']
+                    return reply
                 else:
                     # 需要改变
                     raise Exception(r'聊天机器人请求有问题!!!!')
@@ -31,7 +30,7 @@ def main():
     apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
     cb = ChatBot(apikey)
     loop = asyncio.get_event_loop()
-    task = cb.chat(1, '你叫什么名字？')
+    task = cb.chat(1, '就是要问')
     loop.run_until_complete(task)
     loop.close()
 
