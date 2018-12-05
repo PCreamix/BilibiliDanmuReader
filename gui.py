@@ -67,3 +67,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+# todo: gui和主程序有冲突，运行时容易卡死
