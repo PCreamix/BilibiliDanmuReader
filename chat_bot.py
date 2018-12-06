@@ -29,9 +29,9 @@ class ChatBot:
 
 def main():
     apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
-    cb = ChatBot(apikey)
+    cb = ChatBot(apikey, r'饼干侠')
     loop = asyncio.get_event_loop()
-    task = cb.chat(1, '你叫什么名字？')
+    task = cb.chat(1, r'你叫什么名字？')
     loop.run_until_complete(task)
     loop.close()
 
