@@ -8,7 +8,7 @@ import win32com.client
 class Speaker:
     def __init__(self):
         self.speaker = win32com.client.Dispatch("SAPI.SpVoice")
-        self.speaker.Rate = 1.2  # 语言速度
+        self.speaker.Rate = 2.5  # 语言速度
 
     async def say(self, text):
         # 文字转化为语言播放
