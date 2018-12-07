@@ -9,15 +9,26 @@ from chat_bot import ChatBot
 
 
 class Bilibili_Client:
-    def __init__(self, crawler, message_handle):
-        self._crawler = crawler
-        self._message_handle = message_handle
+    def __init__(self, roomid):
+        self.queue4msg = asyncio.Queue()
+        self.build_crawler(roomid)
+        self.build_msg_handler()
+
+    def build_crawler(self, roomid):
+        self._crawler = Crawler(roomid, self.queue4msg)
+
+    def build_msg_handler(self):
+        spk = Speaker()
+        apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
+        bot_name = r'饼干侠'
+        chatbot = ChatBot(apikey, bot_name)
+        self._message_handler = MessageHandler(spk, self.queue4msg, chatbot)
 
     async def run(self):
         # 建立协程
         crawl_loop = self._crawler.crawl()
         heart_beat_loop = self._crawler.heart_beat_loop()
-        reader_loop = self._message_handle.read_loop()
+        reader_loop = self._message_handler.read_loop()
         # 建立任务
         tasks = [asyncio.ensure_future(crawl_loop), asyncio.ensure_future(heart_beat_loop),
                  asyncio.ensure_future(reader_loop)]
@@ -26,18 +37,9 @@ class Bilibili_Client:
 
 
 if __name__ == '__main__':
-    spk = Speaker()
-    queue = asyncio.Queue()
+    roomid = 6876276
 
-    apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
-    bot_name = r'饼干侠'
-    chatbot = ChatBot(apikey, bot_name)
-    uid = 6876276
-
-    reader = MessageHandler(spk, queue, chatbot)
-    crawler = Crawler(uid, queue)
-
-    client = Bilibili_Client(crawler, reader)
+    client = Bilibili_Client(roomid)
 
     loop = asyncio.get_event_loop()
     coroutine = client.run()
