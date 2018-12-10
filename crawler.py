@@ -170,6 +170,15 @@ class Crawler:
             print(header.operation)
             pass
 
+    async def run(self):
+        # 建立协程
+        heart_beat = self.heart_beat_loop()
+        crawl = self.crawl()
+        # 建立任务
+        tasks = [asyncio.ensure_future(heart_beat), asyncio.ensure_future(crawl), ]
+        # 运行任务
+        await asyncio.wait(tasks)
+
 
 class CommunicationCode:
     # 服务器客服端已知通讯代码
