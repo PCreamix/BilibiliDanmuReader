@@ -12,10 +12,11 @@ class ApplicationGUI(Frame):
         super().__init__(root)
         self.pack()
         self.queue4log = Queue()
-        self.loop = None
         self.roomid = IntVar()
         self.roomid.set(6876276)
         self.createWidgets()
+        self.create_event_loop()
+        self.has_tasks = None
 
     def createWidgets(self):
         self.create_operation_panel()
@@ -31,7 +32,7 @@ class ApplicationGUI(Frame):
         button_frame = Frame(frm)
         self.start = Button(button_frame, text=r'开始', command=self.start)
         self.start.grid(row=0, column=0)
-        self.stop = Button(button_frame, text=r'停止')
+        self.stop = Button(button_frame, text=r'停止', command=self.stop)
         self.stop.grid(row=0, column=1)
         button_frame.grid(row=0, column=2)
 
@@ -44,34 +45,52 @@ class ApplicationGUI(Frame):
         self.logger['yscrollcommand'] = scrollbar.set
         scrollbar.pack(side=RIGHT, fill=Y)
 
-    def logout(self, msg):
+    def create_event_loop(self):
+        # 建立基本循环loop,仅运行一次
+        # core_loop: 客服端主要程序
+        # log_loop: gui界面负责log输出，同时在需要时负责停止core_loop中任务
+        self.core_loop = asyncio.new_event_loop()
+        core_loop_thread = threading.Thread(target=run_loop, args=(self.core_loop,))
+        core_loop_thread.start()
+        self.log_loop = asyncio.new_event_loop()
+        log_loop_thread = threading.Thread(target=run_loop, args=(self.log_loop,))
+        log_loop_thread.start()
+
+    async def logout(self, msg):
         self.logger.insert(END, '>> ')
         self.logger.insert(END, msg)
         self.logger.insert(END, '\n')
         self.logger.see(END)
 
     def start(self):
-        # 停止旧协程和loop
-        if self.loop:
+        # 负责向core_loop中注册新异步事件
+        # 停止旧任务
+        if self.has_tasks:
             self.stop()
         # 建立新协程
         client_loop_coro = self.get_client_loop()
-        log_loop_coro = self.get_log_loop()
-        # 建立新loop
-        self.build_new_event_loop()
-        # 向新loop中添加任务
-        asyncio.run_coroutine_threadsafe(client_loop_coro, self.loop)
-        asyncio.run_coroutine_threadsafe(log_loop_coro, self.loop)
+        log_loop_coro = self.coro_log_loop()
+        # 将新协程添加到协程core_loop中
+        asyncio.run_coroutine_threadsafe(client_loop_coro, self.core_loop)
+        asyncio.run_coroutine_threadsafe(log_loop_coro, self.core_loop)
 
     def stop(self):
-        if self.loop:
-            try:
-                self.loop.stop()
-                self.loop.close()
-            except:
-                raise Exception('loop 有问题')
-            finally:
-                self.loop = None
+        # 停止清空core_loop中的所有任务
+        # 建立停止协程
+        coro_stop = self.stop_core_loop_tasks()
+        # 将协程注册到log_loop
+        asyncio.run_coroutine_threadsafe(coro_stop, self.log_loop)
+        self.has_tasks = None
+
+    async def stop_core_loop_tasks(self):
+        # 只需停止任务，无需停止core_loop
+        if self.core_loop:
+            while True:
+                try:
+                    asyncio.gather(*asyncio.Task.all_tasks(loop=self.core_loop)).cancel()
+                    break  # 停止成功，将跳出循环,否则进入except
+                except:
+                    await asyncio.sleep(1)
 
     def get_client_loop(self):
         roomid = self.roomid.get()
@@ -81,20 +100,10 @@ class ApplicationGUI(Frame):
         # queue4log: 通信管道
         pass
 
-    async def get_log_loop(self):
+    async def coro_log_loop(self):
         while True:
             msg = await self.queue4log.get()
-            self.logout(msg)
-
-    def build_new_event_loop(self):
-        if self.loop:
-            # loop存在，必须停止
-            self.stop()
-
-        self.loop = asyncio.new_event_loop()
-
-        t = threading.Thread(target=run_loop(), args=(self.loop,))
-        t.start()
+            await self.logout(msg)
 
 
 def run_loop(loop):
