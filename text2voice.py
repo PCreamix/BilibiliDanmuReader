@@ -3,11 +3,16 @@
 
 import asyncio
 import win32com.client
+import pythoncom
 
 
 class Speaker:
     def __init__(self):
-        self.speaker = win32com.client.Dispatch("SAPI.SpVoice")
+        try:
+            pythoncom.CoInitialize()  # 多线程中使用pywin32
+            self.speaker = win32com.client.Dispatch("SAPI.SpVoice")
+        except Exception as e:
+            print(e)
         self.speaker.Rate = 2.5  # 语言速度
 
     async def say(self, text):
