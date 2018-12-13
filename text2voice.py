@@ -7,19 +7,19 @@ import pythoncom
 
 
 class Speaker:
-    def __init__(self, queue4log):
-        self.queue4log = queue4log
+    def __init__(self, log_print):
+        self._print = log_print
         try:
             pythoncom.CoInitialize()  # 多线程中使用pywin32
             self.speaker = win32com.client.Dispatch("SAPI.SpVoice")
         except Exception as e:
-            print(e)
+            self._print(e)
         self.speaker.Rate = 2.5  # 语言速度
 
     async def say(self, text):
         # 文字转化为语言播放
         if text:
-            self.queue4log.put(text)
+            self._print(text)
             self.speaker.Speak(text)
 
 

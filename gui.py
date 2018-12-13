@@ -3,15 +3,15 @@
 
 from tkinter import *
 import asyncio
-from queue import Queue
 import threading
+from bilibili_client import Bilibili_Client
+import time
 
 
 class ApplicationGUI(Frame):
     def __init__(self, root=None):
         super().__init__(root)
         self.pack()
-        self.queue4log = Queue()
         self.roomid = IntVar()
         self.roomid.set(6876276)
         self.createWidgets()
@@ -41,10 +41,12 @@ class ApplicationGUI(Frame):
         self.logger['yscrollcommand'] = scrollbar.set
         scrollbar.pack(side=RIGHT, fill=Y)
 
-    def log_info(self):
-        while True:
-            msg = self.queue4log.get(block=True)
-            self.logout(msg)
+    def log_print(self, msg):
+        self.logger.insert(END, time.ctime())
+        self.logger.insert(END, '>> ')
+        self.logger.insert(END, msg)
+        self.logger.insert(END, '\n')
+        self.logger.see(END)
 
     def create_event_loop(self):
         # 建立基本循环loop,仅运行一次
@@ -54,31 +56,22 @@ class ApplicationGUI(Frame):
         core_loop_thread = threading.Thread(target=run_loop, args=(self.core_loop,))
         core_loop_thread.setDaemon(True)
         core_loop_thread.start()
-        log_loop_thread = threading.Thread(target=self.log_info)
-        log_loop_thread.setDaemon(True)
-        log_loop_thread.start()
-
-    def logout(self, msg):
-        self.logger.insert(END, '>> ')
-        self.logger.insert(END, msg)
-        self.logger.insert(END, '\n')
-        self.logger.see(END)
 
     def start(self):
         # 建立新协程
         client_loop_coro = self.get_client_loop()
         # 将新协程添加到协程core_loop中
         asyncio.run_coroutine_threadsafe(client_loop_coro, self.core_loop)
+        # 更改按钮状态
         self.button['text'] = r'退出'
         self.button['command'] = self.master.destroy
 
     def get_client_loop(self):
         roomid = self.roomid.get()
 
-        # queue4info：为异步asyncio.Queue，不支持跨线程
+        # client中有异步asyncio.Queue，不能跨线程，需要和使用它的coroutine在同一个线程中
         async def run(roomid):
-            from bilibili_client import Bilibili_Client
-            client = Bilibili_Client(roomid, self.queue4log)
+            client = Bilibili_Client(roomid, self.log_print)
             await client.run()
 
         return run(roomid)

@@ -9,17 +9,17 @@ from chat_bot import ChatBot
 
 
 class Bilibili_Client:
-    def __init__(self, roomid, queue4log):
-        self.queue4log = queue4log
+    def __init__(self, roomid, log_print):
+        self._print = log_print
         self.queue4msg = asyncio.Queue()
         self.build_crawler(roomid)
         self.build_msg_handler()
 
     def build_crawler(self, roomid):
-        self._crawler = Crawler(roomid, self.queue4msg, self.queue4log)
+        self._crawler = Crawler(roomid, self.queue4msg, self._print)
 
     def build_msg_handler(self):
-        spk = Speaker(self.queue4log)
+        spk = Speaker(self._print)
         apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
         bot_name = r'饼干侠'
         chatbot = ChatBot(apikey, bot_name)

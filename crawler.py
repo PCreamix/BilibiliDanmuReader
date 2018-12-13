@@ -16,16 +16,16 @@ class Crawler:
     HEADER_STRUCT = struct.Struct('>I2H2I')
     HeaderTuple = namedtuple('HeaderTuple', ('total_len', 'header_len', 'proto_ver', 'operation', 'sequence'))
 
-    def __init__(self, uid, queue, queue4log):
+    def __init__(self, uid, queue, log_print):
         self._id = uid
         self._queue = queue
-        self.queue4log = queue4log
+        self._print = log_print
         self.generate_crawl_params()
 
     def get_room_info(self):
         response = requests.get(url=r'https://api.live.bilibili.com/room/v1/Room/room_init', params={'id': self._id, })
         self.roomid = response.json()['data']['room_id']
-        self.queue4log.put(r'真实房间号：{}'.format(self.roomid))
+        self._print(r'真实房间号：{}'.format(self.roomid))
 
     def generate_crawl_params(self):
         self.get_room_info()
@@ -58,7 +58,7 @@ class Crawler:
                         async for res in ws:
                             await self._handle_stream(res.data)
             except Exception as e:
-                self.queue4log.put(e)
+                self._print(e)
                 # 发生错误，休息一段时间，重新连接
                 await asyncio.sleep(5)
             finally:
@@ -73,7 +73,7 @@ class Crawler:
                     await self._send_heart_beat()
                     await asyncio.sleep(30)
             except Exception as e:
-                self.queue4log.put(e)
+                self._print(e)
                 raise ("Can not send heart-beat!!!")
 
     async def _send_heart_beat(self):
@@ -168,7 +168,7 @@ class Crawler:
             await self._handle_command(stream)
         else:
             # 未见过代码
-            self.queue4log.put(header.operation)
+            self._print(header.operation)
             pass
 
     async def run(self):
