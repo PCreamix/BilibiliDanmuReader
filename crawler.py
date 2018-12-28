@@ -52,13 +52,15 @@ class Crawler:
         while True:
             try:
                 async with aiohttp.ClientSession(headers=self.headers) as session:
+                    self._print(r'session {}'.format(session))
                     async with session.ws_connect(self.url) as ws:
+                        self._print(r'websocket {}'.format(ws))
                         self._websocket = ws  # 保存链接，供全局使用
                         await self._send_auth_code()
                         async for res in ws:
                             await self._handle_stream(res.data)
             except Exception as e:
-                self._print(e)
+                self._print(r'crawl {}'.format(e))
                 # 发生错误，休息一段时间，重新连接
                 await asyncio.sleep(5)
             finally:
@@ -69,9 +71,11 @@ class Crawler:
             try:
                 if self._websocket is None:
                     await asyncio.sleep(0.5)
+                    self._print(r'websocket is None!')
                 else:
                     await self._send_heart_beat()
                     await asyncio.sleep(30)
+                    self._print(r'send heart-beat!!!')
             except Exception as e:
                 self._print(e)
                 raise ("Can not send heart-beat!!!")
@@ -93,6 +97,7 @@ class Crawler:
         comment_uname = comment[2][1]
         msg = ('DANMU_MSG', comment_uname, comment_msg, comment_uid)
         await self._queue.put(msg)  # 保存到队列
+        self._print(r'put : {}'.format(msg))
 
     async def analysis_gift(self, gift):
         gift_type = gift['giftName']
@@ -100,44 +105,48 @@ class Crawler:
         gift_uname = gift['uname']
         msg = ('SEND_GIFT', gift_uname, num_gift, gift_type)
         await self._queue.put(msg)  # 保存到队列
+        self._print(r'put : {}'.format(msg))
 
     async def analysis_message(self, message):
-        msg_type = message['cmd']
-        if msg_type == 'DANMU_MSG':
-            # 弹幕评论消息
-            comment = message['info']
-            await self.analysis_comment(comment)
-        elif msg_type == 'SEND_GIFT':
-            # 礼物消息
-            gift = message['data']
-            await self.analysis_gift(gift)
-        # elif msg_type == 'ROOM_RANK':
-        #     # 房间排名信息
-        #     pass
-        # elif msg_type == 'WELCOME':
-        #     # 欢迎信息
-        #     welcome = msg_type['data']
-        # elif msg_type == 'SYS_MSG':
-        #     # 系统消息,其它房间抽奖信息
-        #     pass
-        # elif msg_type == 'NOTICE_MSG':
-        #     # 注意消息
-        #     pass
-        # elif msg_type == 'WELCOME_GUARD':
-        #     # 欢迎房管
-        #     pass
-        # elif msg_type == 'GUARD_MSG':
-        #     # 房管消息
-        #     pass
-        # elif msg_type == 'COMBO_END':
-        #     # end of combo
-        #     pass
-        # else:
-        #     print(msg_type)
-        #     print(msg.keys())
-        else:
-            # 仅处理上面的弹幕和礼物消息，其它的忽略
-            pass
+        try:
+            msg_type = message['cmd']
+            if msg_type == 'DANMU_MSG':
+                # 弹幕评论消息
+                comment = message['info']
+                await self.analysis_comment(comment)
+            elif msg_type == 'SEND_GIFT':
+                # 礼物消息
+                gift = message['data']
+                await self.analysis_gift(gift)
+            # elif msg_type == 'ROOM_RANK':
+            #     # 房间排名信息
+            #     pass
+            # elif msg_type == 'WELCOME':
+            #     # 欢迎信息
+            #     welcome = msg_type['data']
+            # elif msg_type == 'SYS_MSG':
+            #     # 系统消息,其它房间抽奖信息
+            #     pass
+            # elif msg_type == 'NOTICE_MSG':
+            #     # 注意消息
+            #     pass
+            # elif msg_type == 'WELCOME_GUARD':
+            #     # 欢迎房管
+            #     pass
+            # elif msg_type == 'GUARD_MSG':
+            #     # 房管消息
+            #     pass
+            # elif msg_type == 'COMBO_END':
+            #     # end of combo
+            #     pass
+            # else:
+            #     print(msg_type)
+            #     print(msg.keys())
+            else:
+                # 仅处理上面的弹幕和礼物消息，其它的忽略
+                pass
+        except Exception as e:
+            self._print(r'analysis wrong: {}'.format(e))
 
     async def _handle_command(self, stream):
         # 单条消息格式都一致，为header + message形式，server连续发送

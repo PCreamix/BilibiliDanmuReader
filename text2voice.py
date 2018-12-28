@@ -20,7 +20,10 @@ class Speaker:
         # 文字转化为语言播放
         if text:
             self._print(text)
-            self.speaker.Speak(text)
+            try:
+                self.speaker.Speak(text)
+            except Exception as e:
+                self._print(r'reader wrong: {}'.format(e))
 
 
 def main():
