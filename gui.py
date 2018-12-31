@@ -6,6 +6,7 @@ import asyncio
 import threading
 from bilibili_client import Bilibili_Client
 import time
+import re
 
 
 class ApplicationGUI(Frame):
@@ -44,7 +45,11 @@ class ApplicationGUI(Frame):
     def log_print(self, msg):
         self.logger.insert(END, time.ctime())
         self.logger.insert(END, '>> ')
-        self.logger.insert(END, msg)
+        msg = to_surrogates(msg)  # 修改emoji表情为Tkinter可识别编码
+        try:
+            self.logger.insert(END, msg)
+        except Exception as e:
+            self.logger.insert(END, r'gui logger output wrong: {}'.format(e))
         self.logger.insert(END, '\n')
         self.logger.see(END)
 
@@ -75,6 +80,21 @@ class ApplicationGUI(Frame):
             await client.run()
 
         return run(roomid)
+
+
+# analysis emoji
+_nonbmp = re.compile(r'[\U00010000-\U0010FFFF]')
+
+
+def _surrogatepair(match):
+    char = match.group()
+    assert ord(char) > 0xffff
+    encoded = char.encode('utf-16-le')
+    return chr(int.from_bytes(encoded[:2], 'little')) + chr(int.from_bytes(encoded[2:], 'little'))
+
+
+def to_surrogates(text):
+    return _nonbmp.sub(_surrogatepair, text)
 
 
 def run_loop(loop):
