@@ -14,7 +14,7 @@ class Speaker:
             self.speaker = win32com.client.Dispatch("SAPI.SpVoice")
         except Exception as e:
             self._print(e)
-        self.speaker.Rate = 2.5  # 语言速度
+        self.speaker.Rate = 2.6  # 语言速度
 
     async def say(self, text):
         # 文字转化为语言播放
