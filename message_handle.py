@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # _*_ coding:utf-8 _*_
 
+import random
+
 
 class MessageHandler:
     def __init__(self, speaker, queue, chatbot):
@@ -11,6 +13,7 @@ class MessageHandler:
     async def read_msg(self):
         message = await self._queue.get()
         msg_type = message[0]
+        text = ''
         if msg_type == 'DANMU_MSG':
             # 弹幕消息
             uname, msg, userid = message[1:]
@@ -21,14 +24,15 @@ class MessageHandler:
                 await self._chat_with_bot(uname, msg, userid)
             else:
                 text = r"{}说：{} o".format(uname, msg)
-                await self._speaker.say(text)
         elif msg_type == 'SEND_GIFT':
             # 礼物消息
             uname, num_gift, gift_type = message[1:]
-            text = r"谢谢{}送的{}个{} o".format(uname, num_gift, gift_type)
-            await self._speaker.say(text)
+            if is_read(num_gift, gift_type):
+                text = r"谢谢{}送的{}个{} o".format(uname, num_gift, gift_type)
         else:
             pass
+        if text:
+            await self._speaker.say(text)
 
     async def run(self):
         while True:
@@ -42,6 +46,15 @@ class MessageHandler:
         await self._speaker.say(question)
         answer = r'{}回答{}说：{} o'.format(self._chatbot.name, uname, reply)
         await self._speaker.say(answer)
+
+
+def is_read(num_gift, gift_type):
+    res = True
+    if gift_type == r'辣条':
+        if num_gift == 1:
+            if random.random() > 0.23:
+                res = False
+    return res
 
 
 def main():
