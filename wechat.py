@@ -7,6 +7,8 @@ from send_danmu import SendDanmu
 
 
 class WeChatPipe:
+    str_len = 20
+
     def __init__(self, roomid):
         self.client = itchat.new_instance()
         self.client.auto_login()
@@ -21,7 +23,11 @@ class WeChatPipe:
         def danmu_reply(msg):
             msg = msg.text
             if msg.startswith(r"##"):
-                self.smtp.send(msg.lstrip(r"##"))
+                msg = msg.lstrip(r"##")
+                if len(msg) < self.str_len:
+                    self.smtp.send(msg)
+                else:
+                    self.send2wechat(r'消息太长，不能超过{}个字符！！'.format(self.str_len))
 
         self.client.run(blockThread=False)
 

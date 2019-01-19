@@ -28,7 +28,6 @@ class SendDanmu:
             response = requests.post(self.url, data=params, cookies=self.cookie, headers=self.header)
             if json.loads(response.content)['code'] != 0:
                 self.toBeSend = False
-                print('done')
 
     def __generate_params(self, msg):
         form_data = {'color': self.color, 'fontsize': self.fontsize, 'mode': self.mode, 'msg': msg,
