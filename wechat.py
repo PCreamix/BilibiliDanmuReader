@@ -3,6 +3,7 @@
 
 
 import itchat
+from send_danmu import SendDanmu
 
 
 class WeChatPipe:
@@ -26,11 +27,9 @@ class WeChatPipe:
 
 
 def main():
-    class BilibiliSTMP:
-        def send(self, msg):
-            print(msg, type(msg))
+    roomid = 6876276
 
-    stmp = BilibiliSTMP()
+    stmp = SendDanmu(roomid)
     c = WeChatPipe(stmp)
     c.send2wechat('good')
     import time
