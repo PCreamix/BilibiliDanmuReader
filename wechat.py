@@ -5,27 +5,38 @@
 import itchat
 
 
-class WeChat:
-    def __init__(self):
+class WeChatPipe:
+    def __init__(self, SMTPClient):
         self.client = itchat.new_instance()
         self.client.auto_login()
-        self.send2bilibili()
+        self.smtp = SMTPClient
+        self.send2audience()
 
     def send2wechat(self, msg):
         self.client.send_msg(msg, toUserName='filehelper')
 
-    def send2bilibili(self):
+    def send2audience(self):
         @self.client.msg_register(itchat.content.TEXT)
         def danmu_reply(msg):
-            print(msg)
-            print(msg.fromUserName)
-            print(msg.text)
+            msg = msg.text
+            if msg.startswith(r"@"):
+                self.smtp.send(msg.lstrip(r"@"))
+
         self.client.run(blockThread=False)
 
 
-if __name__ == '__main__':
-    c = WeChat()
+def main():
+    class BilibiliSTMP:
+        def send(self, msg):
+            print(msg, type(msg))
+
+    stmp = BilibiliSTMP()
+    c = WeChatPipe(stmp)
     c.send2wechat('good')
-    c.send2wechat('right')
     import time
+
     time.sleep(20)
+
+
+if __name__ == '__main__':
+    main()
