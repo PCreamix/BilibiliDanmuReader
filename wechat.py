@@ -7,10 +7,10 @@ from send_danmu import SendDanmu
 
 
 class WeChatPipe:
-    def __init__(self, SMTPClient):
+    def __init__(self, roomid):
         self.client = itchat.new_instance()
         self.client.auto_login()
-        self.smtp = SMTPClient
+        self.smtp = SendDanmu(roomid)
         self.send2audience()
 
     def send2wechat(self, msg):
@@ -20,8 +20,8 @@ class WeChatPipe:
         @self.client.msg_register(itchat.content.TEXT)
         def danmu_reply(msg):
             msg = msg.text
-            if msg.startswith(r"@"):
-                self.smtp.send(msg.lstrip(r"@"))
+            if msg.startswith(r"##"):
+                self.smtp.send(msg.lstrip(r"##"))
 
         self.client.run(blockThread=False)
 
@@ -29,8 +29,7 @@ class WeChatPipe:
 def main():
     roomid = 6876276
 
-    stmp = SendDanmu(roomid)
-    c = WeChatPipe(stmp)
+    c = WeChatPipe(roomid)
     c.send2wechat('good')
     import time
 
