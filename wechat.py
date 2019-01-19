@@ -22,8 +22,8 @@ class WeChatPipe:
         @self.client.msg_register(itchat.content.TEXT)
         def danmu_reply(msg):
             msg = msg.text
-            if msg.startswith(r"##"):
-                msg = msg.lstrip(r"##")
+            if msg.startswith(r"@@"):
+                msg = msg.lstrip(r"@@")
                 if len(msg) < self.str_len:
                     self.smtp.send(msg)
                 else:
