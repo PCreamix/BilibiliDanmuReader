@@ -5,10 +5,11 @@ import random
 
 
 class MessageHandler:
-    def __init__(self, speaker, queue, chatbot):
+    def __init__(self, speaker, queue, chatbot, chatpipe):
         self._speaker = speaker
         self._queue = queue
         self._chatbot = chatbot
+        self.chat_pipe = chatpipe
 
     async def read_msg(self):
         message = await self._queue.get()
@@ -32,6 +33,7 @@ class MessageHandler:
         else:
             pass
         if text:
+            self.chat_pipe.send2wechat(text)
             await self._speaker.say(text)
 
     async def run(self):

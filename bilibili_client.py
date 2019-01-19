@@ -6,6 +6,7 @@ from crawler import Crawler
 from message_handle import MessageHandler
 from text2voice import Speaker
 from chat_bot import ChatBot
+from wechat import WeChatPipe
 
 
 class Bilibili_Client:
@@ -23,7 +24,8 @@ class Bilibili_Client:
         apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
         bot_name = r'饼干侠'
         chatbot = ChatBot(apikey, bot_name)
-        self._message_handler = MessageHandler(spk, self.queue4msg, chatbot)
+        chatpipe = WeChatPipe(self._crawler.roomid)
+        self._message_handler = MessageHandler(spk, self.queue4msg, chatbot, chatpipe)
 
     async def run(self):
         # 建立协程
