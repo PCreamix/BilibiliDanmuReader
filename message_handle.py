@@ -33,7 +33,10 @@ class MessageHandler:
         else:
             pass
         if text:
-            self.chat_pipe.send2wechat(text)
+            try:
+                self.chat_pipe.send2wechat(text)
+            except:
+                pass
             await self._speaker.say(text)
 
     async def run(self):
