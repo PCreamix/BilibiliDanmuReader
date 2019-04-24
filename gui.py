@@ -76,7 +76,7 @@ class ApplicationGUI(Frame):
 
         # client中有异步asyncio.Queue，不能跨线程，需要和使用它的coroutine在同一个线程中
         async def run(roomid):
-            client = Bilibili_Client(roomid, self.log_print)
+            client = Bilibili_Client(roomid, self.log_print, False)
             await client.run()
 
         return run(roomid)

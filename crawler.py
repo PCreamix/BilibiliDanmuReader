@@ -25,7 +25,10 @@ class Crawler:
     def get_room_info(self):
         response = requests.get(url=r'https://api.live.bilibili.com/room/v1/Room/room_init', params={'id': self._id, })
         self.roomid = response.json()['data']['room_id']
+        self.anchor_id = response.json()['data']['uid']
         self._print(r'真实房间号：{}'.format(self.roomid))
+        self._print(r'主播uid：{}'.format(self.anchor_id))
+
 
     def generate_crawl_params(self):
         self.get_room_info()
@@ -194,9 +197,9 @@ class CommunicationCode:
 
 
 def main():
-    roomid = 528
+    roomid = 4664126
     queue = asyncio.Queue()
-    c = Crawler(roomid, queue)
+    c = Crawler(roomid, queue, print)
     tasks = [asyncio.ensure_future(c.crawl()), asyncio.ensure_future(c.heart_beat_loop())]
     loop = asyncio.get_event_loop()
     try:

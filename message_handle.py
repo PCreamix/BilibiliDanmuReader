@@ -5,11 +5,12 @@ import random
 
 
 class MessageHandler:
-    def __init__(self, speaker, queue, chatbot, chatpipe):
+    def __init__(self, speaker, queue, chatbot, chatpipe, anchor_id):
         self._speaker = speaker
         self._queue = queue
         self._chatbot = chatbot
         self.chat_pipe = chatpipe
+        self._userid = anchor_id
 
     async def read_msg(self):
         message = await self._queue.get()
@@ -18,7 +19,7 @@ class MessageHandler:
         if msg_type == 'DANMU_MSG':
             # 弹幕消息
             uname, msg, userid = message[1:]
-            if uname == r'饼干喵7':
+            if userid == self._userid:
                 uname = r'主播'
             if msg.startswith(r'@@'):
                 # 与聊天机器人对话

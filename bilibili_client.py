@@ -10,7 +10,8 @@ from wechat import WeChatPipe
 
 
 class Bilibili_Client:
-    def __init__(self, roomid, log_print):
+    def __init__(self, roomid, log_print, send2wechat):
+        self.send2wechat = send2wechat
         self._print = log_print
         self.queue4msg = asyncio.Queue()
         self.build_crawler(roomid)
@@ -24,8 +25,10 @@ class Bilibili_Client:
         apikey = r'fc0642ab32284058ad1e146f0c1aa0c9'
         bot_name = r'饼干侠'
         chatbot = ChatBot(apikey, bot_name)
-        chatpipe = WeChatPipe(self._crawler.roomid)
-        self._message_handler = MessageHandler(spk, self.queue4msg, chatbot, chatpipe)
+        chatpipe = None
+        if self.send2wechat:
+            chatpipe = WeChatPipe(self._crawler.roomid)
+        self._message_handler = MessageHandler(spk, self.queue4msg, chatbot, chatpipe, self._crawler.anchor_id)
 
     async def run(self):
         # 建立协程
@@ -40,7 +43,7 @@ class Bilibili_Client:
 if __name__ == '__main__':
     roomid = 6876276
 
-    client = Bilibili_Client(roomid)
+    client = Bilibili_Client(roomid, print)
 
     loop = asyncio.get_event_loop()
     coroutine = client.run()
