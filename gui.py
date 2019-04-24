@@ -10,7 +10,8 @@ import re
 
 
 class ApplicationGUI(Frame):
-    def __init__(self, root=None):
+    def __init__(self, root, send2wechat):
+        self.send2wechat = send2wechat
         super().__init__(root)
         self.pack()
         self.roomid = IntVar()
@@ -76,7 +77,7 @@ class ApplicationGUI(Frame):
 
         # client中有异步asyncio.Queue，不能跨线程，需要和使用它的coroutine在同一个线程中
         async def run(roomid):
-            client = Bilibili_Client(roomid, self.log_print, False)
+            client = Bilibili_Client(roomid, self.log_print, self.send2wechat)
             await client.run()
 
         return run(roomid)

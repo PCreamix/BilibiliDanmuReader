@@ -6,9 +6,10 @@ from tkinter import Tk
 
 
 def main():
+    send2wechat = False
     root = Tk()
     root.title(r'Bilibili Client')
-    app = gui(root)
+    app = gui(root, send2wechat)
     app.mainloop()
 
 
